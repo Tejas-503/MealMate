@@ -8,10 +8,39 @@ import { toast } from 'sonner'
 import { Utensils } from 'lucide-react'
 
 export default function LoginStudent() {
+    const [isLogin, setIsLogin] = useState(false)
+    const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: fullName,
+                    role: 'student'
+                }
+            }
+        })
+
+        if (error) {
+            toast.error(error.message)
+            setLoading(false)
+            return
+        }
+
+        toast.success('Registration successful!')
+        setFullName('')
+        setEmail('')
+        setPassword('')
+        setIsLogin(true)
+    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -27,7 +56,6 @@ export default function LoginStudent() {
             return
         }
 
-        // Check Role
         if (data.user) {
             const { data: profile } = await supabase
                 .from('profiles')
@@ -38,11 +66,12 @@ export default function LoginStudent() {
             if (profile?.role === 'staff') {
                 toast.error('This is a staff account. Please login through the staff portal.')
                 await supabase.auth.signOut()
-                navigate('/login/staff')
-            } else {
-                toast.success('Logged in successfully!')
-                navigate('/student')
+                setLoading(false)
+                return
             }
+
+            toast.success('Logged in successfully!')
+            navigate('/student')
         }
         setLoading(false)
     }
@@ -58,11 +87,27 @@ export default function LoginStudent() {
 
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Student Login</CardTitle>
-                    <CardDescription>Enter your email and password to access your account</CardDescription>
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                        <Utensils className="text-primary h-6 w-6" />
+                        {isLogin ? 'Student Login' : 'Student Registration'}
+                    </CardTitle>
+                    <CardDescription>
+                        {isLogin ? 'Access your student portal' : 'Create a new account'}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-4">
+                    <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
+                        {!isLogin && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Full Name</label>
+                                <Input
+                                    placeholder="John Doe"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <label className="text-sm font-medium leading-none">Email</label>
                             <Input
@@ -80,19 +125,29 @@ export default function LoginStudent() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                minLength={6}
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
-                            {loading ? 'Signing in...' : 'Sign in'}
+                            {loading ? (isLogin ? 'Authenticating...' : 'Creating account...') : (isLogin ? 'Sign In' : 'Register')}
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
-                    <p className="text-sm text-muted-foreground">
-                        Don't have an account?{' '}
-                        <Link to="/register" className="text-primary hover:underline">
-                            Register here
-                        </Link>
+                <CardFooter className="flex justify-center text-center">
+                    <p className="text-sm text-muted-foreground w-full">
+                        {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsLogin(!isLogin)
+                                setEmail('')
+                                setPassword('')
+                                setFullName('')
+                            }}
+                            className="text-primary hover:underline cursor-pointer"
+                        >
+                            {isLogin ? 'Register here' : 'Sign in here'}
+                        </button>
                     </p>
                 </CardFooter>
             </Card>
