@@ -32,7 +32,7 @@ export default function LoginStaff() {
                 .from('profiles')
                 .select('role')
                 .eq('id', data.user.id)
-                .single()
+                .maybeSingle()
 
             if (profile?.role !== 'staff') {
                 toast.error('Not a staff account.')

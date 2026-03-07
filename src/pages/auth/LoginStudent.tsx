@@ -33,7 +33,7 @@ export default function LoginStudent() {
                 .from('profiles')
                 .select('role')
                 .eq('id', data.user.id)
-                .single()
+                .maybeSingle()
 
             if (profile?.role === 'staff') {
                 toast.error('This is a staff account. Please login through the staff portal.')

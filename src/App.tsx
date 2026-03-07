@@ -43,12 +43,11 @@ function App() {
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (!error && data) {
       setRole(data.role)
     } else {
-      // Fallback to student role if profile doesn't exist yet to prevent redirect loops
       setRole('student')
     }
     setLoading(false)
